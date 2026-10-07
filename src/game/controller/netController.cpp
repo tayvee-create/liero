@@ -473,6 +473,7 @@ void NetController::changeState(GameState newState)
 	{
 		RandSwap swap(syncRand);
 		ws.reset(new WeaponSelection(*game));
+		ws->netLocalWorm = localIdx;
 	}
 	else if (newState == StateGame)
 	{

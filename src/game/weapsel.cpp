@@ -9,6 +9,8 @@
 #include "mixer/player.hpp"
 #include "viewport.hpp"
 #include "filesystem.hpp"
+#include "gfx/blit.hpp"
+#include <cctype>
 #include "gfx/renderer.hpp"
 
 WeaponSelection::WeaponSelection(Game& game)
@@ -19,6 +21,8 @@ WeaponSelection::WeaponSelection(Game& game)
 , cachedBackground(false)
 , cachedSpectatorBackground(false)
 , focused(true)
+, onePlayer(false)
+, netLocalWorm(-1)
 {
 	Common& common = *game.common;
 
@@ -91,6 +95,94 @@ WeaponSelection::WeaponSelection(Game& game)
 		menus[i].moveToFirstVisible();
 		isReady[i] = (ws.controller != 0 && selectBotWeapons != 1);
 	}
+
+	if (gfx.onePlayerActive)
+	{
+		int humans = 0;
+		for (std::size_t i = 0; i < menus.size(); ++i)
+		{
+			if (!isReady[i])
+			{
+				++humans;
+				menus[i].place(36, 40);
+			}
+		}
+		onePlayer = (humans == 1);
+	}
+}
+
+
+namespace
+{
+
+std::string displayKeyName(uint32_t key)
+{
+	if (key == 0)
+		return "-";
+	std::string name = gfx.getKeyName(key);
+	for (auto& ch : name)
+		ch = char(std::toupper((unsigned char)ch));
+	auto replace = [&](std::string const& from, std::string const& to) {
+		std::size_t p = name.find(from);
+		if (p != std::string::npos)
+			name.replace(p, from.size(), to);
+	};
+	replace("CRTL", "CTRL"); // Typo in the original key names
+	replace("ALT", "OPTION"); // Mac keyboards
+	return name;
+}
+
+}
+
+// Lists the worm's keys below its weapon menu (or beside it on the one player screen)
+void WeaponSelection::drawControls(Renderer& renderer, std::size_t menuIdx, int x, int y, bool full)
+{
+	Common& common = *game.common;
+	Viewport& vp = *game.viewports[menuIdx];
+	Worm& worm = *game.wormByIdx(vp.wormIdx);
+
+	uint32_t const* keys;
+	if (onePlayer)
+		keys = onePlayerControls;
+	else
+	{
+		// In a network game the synchronized settings belong to the host; show this Mac's own keys
+		WormSettings& ws = (netLocalWorm >= 0) ? *gfx.settings->wormSettings[0] : *worm.settings;
+		keys = gfx.settings->extensions ? ws.controlsEx : ws.controls;
+	}
+
+	auto k = [&](int c) { return displayKeyName(keys[c]); };
+	bool hasDig = (onePlayer || gfx.settings->extensions) && keys[WormSettings::Dig] != 0;
+
+	std::vector<std::string> lines;
+	if (full)
+	{
+		lines.push_back("CONTROLS");
+		lines.push_back("");
+	}
+	lines.push_back("MOVE: " + k(Worm::Left) + " / " + k(Worm::Right));
+	lines.push_back("AIM: " + k(Worm::Up) + " / " + k(Worm::Down));
+	lines.push_back("FIRE: " + k(Worm::Fire));
+	lines.push_back("JUMP: " + k(Worm::Jump));
+	lines.push_back("WEAPON: " + k(Worm::Change) + " + MOVE");
+	lines.push_back(full ? "ROPE: " + k(Worm::Change) + " + " + k(Worm::Jump) : std::string("ROPE: WEAPON + JUMP"));
+	if (full || hasDig)
+		lines.push_back("DIG: " + (hasDig ? k(WormSettings::Dig) : k(Worm::Left) + " + " + k(Worm::Right)));
+	if (full)
+	{
+		lines.push_back("");
+		lines.push_back("PICK WEAPONS WITH THE ARROWS,");
+		lines.push_back("THEN " + k(Worm::Fire) + " ON DONE!");
+	}
+
+	int width = 0;
+	for (auto const& line : lines)
+		width = std::max(width, common.font.getDims(line));
+	int height = int(lines.size()) * 8;
+	fillRect(renderer.bmp, x - 2, y - 2, width + 4, height + 3, 0);
+
+	for (std::size_t i = 0; i < lines.size(); ++i)
+		common.font.drawText(renderer.bmp, lines[i], x, y + int(i) * 8, (full && i == 0) ? 50 : 7);
 }
 
 void WeaponSelection::drawSpectatorViewports(Renderer& renderer, GameState state)
@@ -154,6 +246,29 @@ void WeaponSelection::drawNormalViewports(Renderer& renderer, GameState state)
 	{
 		game.draw(renderer, state, false);
 
+		if (onePlayer)
+		{
+			// One screen for the human: weapon list on the left, controls on the right
+			fillRect(renderer.bmp, 0, 0, 320, 158, 0);
+			for (std::size_t i = 0; i < menus.size(); ++i)
+			{
+				if (!isReady[i])
+					drawControls(renderer, i, 160, 30, true);
+			}
+			std::string vs = "VS THE COMPUTER";
+			common.font.drawText(renderer.bmp, vs, 36, 132, 7);
+		}
+		else
+		{
+			for (std::size_t i = 0; i < menus.size(); ++i)
+			{
+				Viewport& vp = *game.viewports[i];
+				if (netLocalWorm >= 0 && int(vp.wormIdx) != netLocalWorm)
+					continue;
+				drawControls(renderer, i, vp.rect.x1 + 8, 104, false);
+			}
+		}
+
 		if (game.settings->levelFile.empty())
 		{
 			common.font.drawText(renderer.bmp, LS(LevelRandom), 0, 162, 50);
@@ -185,6 +300,9 @@ void WeaponSelection::drawNormalViewports(Renderer& renderer, GameState state)
 
 		Worm& worm = *game.wormByIdx(vp.wormIdx);
 		WormSettings& ws = *worm.settings;
+
+		if (onePlayer && isReady[i])
+			continue; // The computer chooses out of sight
 
 		int width = common.font.getDims(ws.name);
 		drawRoundedBox(renderer.bmp, weaponMenu.x + 29 - width / 2, weaponMenu.y - 11, 0, 7, width);

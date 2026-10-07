@@ -80,7 +80,29 @@ LocalController::~LocalController()
 void LocalController::onKey(int key, bool keyState)
 {
 	Worm::Control control;
-	Worm* worm = game.findControlForKey(key, control);
+	Worm* worm = 0;
+	if (gfx.onePlayerActive)
+	{
+		// Only the one player keys work, and they always drive the human worm
+		for (int c = 0; c < WormSettings::MaxControlEx; ++c)
+		{
+			if (onePlayerControls[c] == uint32_t(key))
+			{
+				control = Worm::Control(c);
+				for (auto* w : game.worms)
+				{
+					if (!w->ai.get())
+					{
+						worm = w;
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
+	else
+		worm = game.findControlForKey(key, control);
 	if(worm && worm->ai.get())
 	{
 		// Keys bound to a computer worm control a human worm instead, so in a

@@ -305,4 +305,8 @@ struct Gfx
 
 extern Gfx gfx;
 
+// Fixed keys for the human in one player mode, in Worm control order:
+// Up, Down, Left, Right (arrow keys), Fire (X), Change (C), Jump (Z), Dig (V)
+static uint32_t const onePlayerControls[] = {0xA0, 0xA8, 0xA3, 0xA5, 0x2D, 0x2E, 0x2C, 0x2F};
+
 #endif // LIERO_GFX_HPP

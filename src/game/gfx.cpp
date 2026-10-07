@@ -1874,7 +1874,7 @@ restart:
 		if (netAutoStart.mode)
 		{
 			int const autoSelections[] = {MainMenu::MaNetHost, MainMenu::MaNetJoin,
-				MainMenu::MaOnePlayerEasy, MainMenu::MaOnePlayerHard};
+				MainMenu::MaOnePlayerEasy, MainMenu::MaOnePlayerHard, MainMenu::MaNewGame};
 			selection = autoSelections[netAutoStart.mode - 1];
 			netAutoStart.mode = 0;
 		}

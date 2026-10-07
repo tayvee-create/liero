@@ -76,10 +76,10 @@ private:
 	int escapeTimer;
 };
 
-// Command line shortcuts used for testing: --net-host, --net-join <ip>, --net-bot, --one-player easy|hard
+// Command line shortcuts used for testing: --net-host, --net-join <ip>, --net-bot, --one-player easy|hard, --two-player
 struct NetAutoStart
 {
-	int mode = 0; // 1 = host, 2 = join, 3 = one player easy, 4 = one player hard
+	int mode = 0; // 1 = host, 2 = join, 3 = one player easy, 4 = one player hard, 5 = two player
 	std::string ip;
 	bool bot = false; // Local worm plays random inputs and logs checksums to stderr
 };

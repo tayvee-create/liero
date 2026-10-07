@@ -108,6 +108,8 @@ try
 					netAutoStart.mode = 2;
 					netAutoStart.ip = argv[++i];
 				}
+				else if (std::strcmp(argv[i] + 2, "two-player") == 0)
+					netAutoStart.mode = 5;
 				else if (std::strcmp(argv[i] + 2, "one-player") == 0 && i + 1 < argc)
 					netAutoStart.mode = std::strcmp(argv[++i], "hard") == 0 ? 4 : 3;
 				else if (std::strcmp(argv[i] + 2, "net-bot") == 0)
