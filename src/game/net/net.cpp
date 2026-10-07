@@ -155,6 +155,13 @@ bool Connection::nextMessage(MsgType& type, Buffer& payload)
 	if (inbuf.size() < 5)
 		return false;
 	uint32_t len = (uint32_t(inbuf[1]) << 24) | (uint32_t(inbuf[2]) << 16) | (uint32_t(inbuf[3]) << 8) | inbuf[4];
+	if (len > maxMessageSize)
+	{
+		// Not a Liero peer (or a hostile one); don't buffer gigabytes waiting for it
+		close();
+		inbuf.clear();
+		return false;
+	}
 	if (inbuf.size() < 5 + len)
 		return false;
 	type = MsgType(inbuf[0]);

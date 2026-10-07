@@ -229,9 +229,16 @@ void NetController::pumpNetwork()
 		{
 			uint32_t frame = msg.getU32();
 			uint8_t count = msg.getU8();
+			// Only accept frames we can still use and that a real peer could be sending
+			if (frame < simFrame || frame > simFrame + 10 * ticksPerSecond)
+				break;
 			std::vector<uint8_t>& evs = inputs[remoteIdx][frame];
 			for (int i = 0; i < count; ++i)
-				evs.push_back(msg.getU8());
+			{
+				uint8_t ev = msg.getU8();
+				if ((ev & 0x7f) < WormSettings::MaxControlEx)
+					evs.push_back(ev);
+			}
 			break;
 		}
 		case net::MsgCheck:
@@ -699,7 +706,7 @@ std::unique_ptr<Controller> hostGame()
 
 	uint16_t version = hello.getU16();
 	std::string tc = hello.getStr();
-	std::string name = hello.getStr();
+	std::string name = hello.getStr().substr(0, 20); // Same limit as the name editor
 	int rgb[3];
 	for (int i = 0; i < 3; ++i)
 		rgb[i] = hello.getU8() & 63;

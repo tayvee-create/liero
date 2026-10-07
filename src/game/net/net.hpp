@@ -14,6 +14,7 @@ namespace net
 int const gamePort = 24850;      // TCP, game traffic
 int const discoveryPort = 24851; // UDP, LAN discovery
 uint16_t const protocolVersion = 1;
+uint32_t const maxMessageSize = 16 * 1024 * 1024; // The initial game is well under 1 MB
 
 enum MsgType : uint8_t
 {
