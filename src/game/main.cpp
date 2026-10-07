@@ -171,6 +171,16 @@ try
 		gfx.settings->tc = tcName;
 
 	{
+		// The original Liero data isn't in the repository (see README); if it hasn't been
+		// converted with tctool, fall back to the bundled free data instead of failing
+		std::error_code ec;
+		std::filesystem::path tcRoot = std::filesystem::path(configPath.empty() ? "." : configPath) / "TC";
+		if (!std::filesystem::exists(tcRoot / gfx.settings->tc, ec)
+		 && std::filesystem::exists(tcRoot / "openliero", ec))
+			gfx.settings->tc = "openliero";
+	}
+
+	{
 		// Move the right player off the old PC defaults (Right Ctrl/Alt/Shift),
 		// unless they have been changed by hand
 		uint32_t const oldKeys[7] = {0xA0, 0xA8, 0xA3, 0xA5, 0x75, 0x90, 0x36};

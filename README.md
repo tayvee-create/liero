@@ -1,3 +1,66 @@
+# OpenLiero for Mac: network play edition
+
+This is a fork of **[OpenLiero](https://github.com/gliptic/liero)** by **[gliptic](https://github.com/gliptic)**
+and its contributors, itself a faithful recreation of **Liero** with its source code published, the classic
+1998 worm deathmatch game by **Joosa Riekkinen (MetsänEläimet)**. All credit for the game,
+its engine and its design goes to them. This fork only adds the features listed below.
+
+![Main menu](docs/screenshots/main-menu.png)
+
+## What this fork adds
+
+- **Network play over Wi-Fi:** one player picks *Host Network Game*, the other *Join Network Game*
+  and the host is found automatically on the local network (or type the IP address shown on
+  the host's screen). Both Macs run the same deterministic simulation and only exchange key
+  presses (lockstep, with a 3-frame input delay and checksums to detect desyncs).
+  The joiner is the left worm and the host the right worm.
+- **One player vs the computer:** *Easy* uses the classic Liero CPU, *Hard* the predictive AI
+  from OpenLiero. The computer picks its weapons out of sight.
+- **Controls on screen:** the weapon selection screen lists each player's keys.
+- **MacBook-friendly keys:** one player and network games use the arrow keys plus
+  **X** fire, **Z** jump, **C** change weapon (**C + Z** ninja rope) and **V** dig.
+  In local two player games the right player uses the arrows plus **.** fire, **,** change and **/** jump
+  (MacBooks have no Right Ctrl key).
+- **A self-contained Mac app:** `pkg/package_mac.sh` builds `Liero.app` with SDL bundled
+  inside, plus a zip to share, and settings live in `~/Library/Application Support/OpenLiero`.
+- Small fixes: absolute paths on macOS, Cmd+Q quits, and the game falls back to the bundled
+  data when the original Liero data hasn't been converted.
+
+| Network match | Two player weapon selection | One player weapon selection |
+|---|---|---|
+| ![Network match](docs/screenshots/network-match.png) | ![Two player weapons](docs/screenshots/two-player-weapons.png) | ![One player weapons](docs/screenshots/one-player-weapons.png) |
+
+## Building the Mac app
+
+```bash
+brew install cmake sdl2 sdl2_image dylibbundler
+pkg/package_mac.sh
+```
+
+This produces `dist/Liero.app` and `dist/Liero.zip`. The repository only contains OpenLiero's
+free game data; to play with the original Liero data, convert it with `tctool` as described
+below before packaging. Network players need the same version of the app and the same data.
+
+The app is not signed with an Apple developer account, so the first time it is opened on another
+Mac, right-click it and choose **Open** (or allow it under System Settings > Privacy & Security).
+
+## Credits
+
+- **Liero:** Joosa Riekkinen (MetsänEläimet), 1998-1999.
+- **OpenLiero:** [gliptic](https://github.com/gliptic) with [Anders Höckersten](https://github.com/ahockersten),
+  [George Rawlinson](https://github.com/grawlinson), [emillaine](https://github.com/emillaine),
+  [milleniumbug](https://github.com/milleniumbug) and
+  [the other contributors](https://github.com/gliptic/liero/graphs/contributors).
+- **Replacement sound effects:** "sea", WTFPL (via lierolibre); see `TC/openliero/sounds/sounds.txt`.
+- **Network play, one player mode and Mac packaging in this fork:** Huw Rowlands, built with Claude Code.
+
+The upstream project does not specify a licence and this fork does not add one; the original
+authors' rights apply.
+
+---
+
+# Original OpenLiero README
+
 
 How to build (Windows)
 ======================
