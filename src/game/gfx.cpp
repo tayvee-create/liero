@@ -544,6 +544,8 @@ void Gfx::loadMenus()
 	settingsMenu.addItem(MenuItem(48, 7, "LOAD SETUP", SettingsMenu::LoadOptions));
 
 	mainMenu.addItem(MenuItem(10, 10, "", MainMenu::MaResumeGame)); // string set in menuLoop
+	mainMenu.addItem(MenuItem(10, 10, "ONE PLAYER - EASY", MainMenu::MaOnePlayerEasy));
+	mainMenu.addItem(MenuItem(10, 10, "ONE PLAYER - HARD", MainMenu::MaOnePlayerHard));
 	mainMenu.addItem(MenuItem(10, 10, "", MainMenu::MaNewGame)); // string set in menuLoop
 	mainMenu.addItem(MenuItem(10, 10, "HOST NETWORK GAME", MainMenu::MaNetHost));
 	mainMenu.addItem(MenuItem(10, 10, "JOIN NETWORK GAME", MainMenu::MaNetJoin));
@@ -1871,11 +1873,34 @@ restart:
 		int selection;
 		if (netAutoStart.mode)
 		{
-			selection = netAutoStart.mode == 1 ? MainMenu::MaNetHost : MainMenu::MaNetJoin;
+			int const autoSelections[] = {MainMenu::MaNetHost, MainMenu::MaNetJoin,
+				MainMenu::MaOnePlayerEasy, MainMenu::MaOnePlayerHard};
+			selection = autoSelections[netAutoStart.mode - 1];
 			netAutoStart.mode = 0;
 		}
 		else
 			selection = menuLoop();
+
+		if(selection == MainMenu::MaOnePlayerEasy || selection == MainMenu::MaOnePlayerHard)
+		{
+			// Left worm is you, right worm is the computer: 1 = classic Liero CPU, 2 = predictive AI
+			if (!onePlayerActive)
+			{
+				savedControllers[0] = settings->wormSettings[0]->controller;
+				savedControllers[1] = settings->wormSettings[1]->controller;
+			}
+			settings->wormSettings[0]->controller = 0;
+			settings->wormSettings[1]->controller = (selection == MainMenu::MaOnePlayerEasy) ? 1 : 2;
+			onePlayerActive = true;
+			selection = MainMenu::MaNewGame;
+		}
+		else if(selection == MainMenu::MaNewGame && onePlayerActive)
+		{
+			// Back to whatever the players were set to before one player mode
+			settings->wormSettings[0]->controller = savedControllers[0];
+			settings->wormSettings[1]->controller = savedControllers[1];
+			onePlayerActive = false;
+		}
 
 		if(selection == MainMenu::MaNewGame)
 		{
@@ -2059,13 +2084,13 @@ int Gfx::menuLoop()
 	{
 		mainMenu.setVisibility(MainMenu::MaResumeGame, true);
 		mainMenu.itemFromId(MainMenu::MaResumeGame)->string = "RESUME GAME (F1)";
-		mainMenu.itemFromId(MainMenu::MaNewGame)->string = "NEW GAME";
+		mainMenu.itemFromId(MainMenu::MaNewGame)->string = "TWO PLAYER";
 		startItemId = MainMenu::MaResumeGame;
 	}
 	else
 	{
 		mainMenu.setVisibility(MainMenu::MaResumeGame, false);
-		mainMenu.itemFromId(MainMenu::MaNewGame)->string = "NEW GAME (F1)";
+		mainMenu.itemFromId(MainMenu::MaNewGame)->string = "TWO PLAYER (F1)";
 		startItemId = MainMenu::MaNewGame;
 	}
 

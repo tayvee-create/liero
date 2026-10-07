@@ -291,6 +291,10 @@ struct Gfx
 	gvl::shared_ptr<Common> common;
 	std::unique_ptr<Controller> controller;
 
+	// Player controller settings to restore when leaving one player mode
+	bool onePlayerActive = false;
+	uint32_t savedControllers[2] = {0, 0};
+
 	std::vector<Joystick> joysticks;
 
 	SDL_Keysym keyBuf[32], *keyBufPtr;

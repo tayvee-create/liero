@@ -81,6 +81,19 @@ void LocalController::onKey(int key, bool keyState)
 {
 	Worm::Control control;
 	Worm* worm = game.findControlForKey(key, control);
+	if(worm && worm->ai.get())
+	{
+		// Keys bound to a computer worm control a human worm instead, so in a
+		// one player game either set of keys works
+		for (auto* w : game.worms)
+		{
+			if (!w->ai.get())
+			{
+				worm = w;
+				break;
+			}
+		}
+	}
 	if(worm)
 	{
 		worm->cleanControlStates.set(control, keyState);

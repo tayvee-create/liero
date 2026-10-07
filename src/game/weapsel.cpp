@@ -45,7 +45,9 @@ WeaponSelection::WeaponSelection(Game& game)
 			menus[i].place(x, y);
 		}
 
-		bool randomWeapons = (ws.controller != 0 && game.settings->selectBotWeapons == 0);
+		// In one player mode nobody is at the keys for the computer, so it picks for itself
+		int selectBotWeapons = gfx.onePlayerActive ? 0 : game.settings->selectBotWeapons;
+		bool randomWeapons = (ws.controller != 0 && selectBotWeapons == 0);
 
 		for(int j = 0; j < Settings::selectableWeapons; ++j)
 		{
@@ -87,7 +89,7 @@ WeaponSelection::WeaponSelection(Game& game)
 		worm.currentWeapon = 0;
 
 		menus[i].moveToFirstVisible();
-		isReady[i] = (ws.controller != 0 && game.settings->selectBotWeapons != 1);
+		isReady[i] = (ws.controller != 0 && selectBotWeapons != 1);
 	}
 }
 
