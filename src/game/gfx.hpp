@@ -295,6 +295,16 @@ struct Gfx
 	bool onePlayerActive = false;
 	uint32_t savedControllers[2] = {0, 0};
 
+	// Leaves one player mode, putting both players back as they were set up
+	void restorePlayerControllers()
+	{
+		if (!onePlayerActive)
+			return;
+		settings->wormSettings[0]->controller = savedControllers[0];
+		settings->wormSettings[1]->controller = savedControllers[1];
+		onePlayerActive = false;
+	}
+
 	std::vector<Joystick> joysticks;
 
 	SDL_Keysym keyBuf[32], *keyBufPtr;

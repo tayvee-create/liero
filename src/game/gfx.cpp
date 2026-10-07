@@ -700,6 +700,7 @@ void Gfx::processEvent(SDL_Event& ev, Controller* controller)
 			// tell a network opponent, keep the settings, and exit.
 			running = false;
 			netShutdown();
+			restorePlayerControllers(); // Don't save one player mode's computer opponent
 			settings->save(getConfigNode() / "liero.cfg", rand);
 			SDL_Quit();
 			std::exit(0);
@@ -1894,12 +1895,9 @@ restart:
 			onePlayerActive = true;
 			selection = MainMenu::MaNewGame;
 		}
-		else if(selection == MainMenu::MaNewGame && onePlayerActive)
+		else if(selection == MainMenu::MaNewGame)
 		{
-			// Back to whatever the players were set to before one player mode
-			settings->wormSettings[0]->controller = savedControllers[0];
-			settings->wormSettings[1]->controller = savedControllers[1];
-			onePlayerActive = false;
+			restorePlayerControllers();
 		}
 
 		if(selection == MainMenu::MaNewGame)

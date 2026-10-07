@@ -19,6 +19,7 @@
 #include "controller/netController.hpp"
 #include <gvl/support/platform.hpp>
 
+#include <algorithm>
 #include <ctime>
 #include <cstdlib>
 #include <exception>
@@ -169,6 +170,19 @@ try
 	if (tcSet)
 		gfx.settings->tc = tcName;
 
+	{
+		// Move the right player off the old PC defaults (Right Ctrl/Alt/Shift),
+		// unless they have been changed by hand
+		uint32_t const oldKeys[7] = {0xA0, 0xA8, 0xA3, 0xA5, 0x75, 0x90, 0x36};
+		uint32_t const newKeys[7] = {0xA0, 0xA8, 0xA3, 0xA5, 0x34, 0x33, 0x35};
+		WormSettings& right = *gfx.settings->wormSettings[1];
+		if (std::equal(oldKeys, oldKeys + 7, right.controlsEx))
+		{
+			std::copy(newKeys, newKeys + 7, right.controls);
+			std::copy(newKeys, newKeys + 7, right.controlsEx);
+		}
+	}
+
 	// TC loading
 	FsNode lieroRoot(configNode / "TC" / gfx.settings->tc);
 	gvl::shared_ptr<Common> common(new Common());
@@ -181,6 +195,7 @@ try
 
 	gfx.mainLoop();
 
+	gfx.restorePlayerControllers();
 	gfx.settings->save(configNode / "liero.cfg", gfx.rand);
 
 	sfx.deinit();

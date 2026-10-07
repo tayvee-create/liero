@@ -119,6 +119,13 @@ std::string displayKeyName(uint32_t key)
 {
 	if (key == 0)
 		return "-";
+	// Punctuation reads badly on its own (and the original names follow a Finnish layout)
+	if (key == 0x33)
+		return "COMMA";
+	if (key == 0x34)
+		return "FULL STOP";
+	if (key == 0x35)
+		return "SLASH";
 	std::string name = gfx.getKeyName(key);
 	for (auto& ch : name)
 		ch = char(std::toupper((unsigned char)ch));
