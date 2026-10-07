@@ -123,7 +123,7 @@ try
 #if __APPLE__
 	// Inside a .app the working directory is the read-only Resources folder.
 	// Keep settings, profiles and replays in Application Support instead, seeded
-	// with the bundled data on first run.
+	// with the bundled data (refreshed whenever the app ships newer files).
 	if (configPath.empty() && std::getenv("HOME"))
 	{
 		namespace fs = std::filesystem;
@@ -133,7 +133,7 @@ try
 		for (char const* item : {"TC", "icon.png", "spectator_icon.png"})
 		{
 			if (fs::exists(item, ec))
-				fs::copy(item, support / item, fs::copy_options::recursive | fs::copy_options::skip_existing, ec);
+				fs::copy(item, support / item, fs::copy_options::recursive | fs::copy_options::update_existing, ec);
 		}
 		if (!ec)
 			configPath = support.string() + "/";
