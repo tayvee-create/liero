@@ -16,10 +16,13 @@
 #include "constants.hpp"
 #include "math.hpp"
 #include "console.hpp"
+#include "controller/netController.hpp"
 #include <gvl/support/platform.hpp>
 
 #include <ctime>
+#include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <gvl/math/cmwc.hpp>
 
 #if __APPLE__
@@ -98,6 +101,15 @@ try
 					++i;
 					configPath = argv[i];
 				}
+				else if (std::strcmp(argv[i] + 2, "net-host") == 0)
+					netAutoStart.mode = 1;
+				else if (std::strcmp(argv[i] + 2, "net-join") == 0 && i + 1 < argc)
+				{
+					netAutoStart.mode = 2;
+					netAutoStart.ip = argv[++i];
+				}
+				else if (std::strcmp(argv[i] + 2, "net-bot") == 0)
+					netAutoStart.bot = true;
 				break;
 			}
 		}
@@ -107,6 +119,26 @@ try
 			tcSet = true;
 		}
 	}
+
+#if __APPLE__
+	// Inside a .app the working directory is the read-only Resources folder.
+	// Keep settings, profiles and replays in Application Support instead, seeded
+	// with the bundled data on first run.
+	if (configPath.empty() && std::getenv("HOME"))
+	{
+		namespace fs = std::filesystem;
+		fs::path support = fs::path(std::getenv("HOME")) / "Library/Application Support/OpenLiero";
+		std::error_code ec;
+		fs::create_directories(support, ec);
+		for (char const* item : {"TC", "icon.png", "spectator_icon.png"})
+		{
+			if (fs::exists(item, ec))
+				fs::copy(item, support / item, fs::copy_options::recursive | fs::copy_options::skip_existing, ec);
+		}
+		if (!ec)
+			configPath = support.string() + "/";
+	}
+#endif
 
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
 

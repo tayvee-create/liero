@@ -19,7 +19,9 @@ struct MainMenu : Menu
 		MaQuit,
 		MaReplays,
 		MaReplay,
-		MaTc
+		MaTc,
+		MaNetHost,
+		MaNetJoin
 	};
 
 	MainMenu(int x, int y)

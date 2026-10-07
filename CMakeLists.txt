@@ -8,7 +8,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/ffmpeg)
 link_directories(${PROJECT_SOURCE_DIR}/ffmpeg/libavcodec ${PROJECT_SOURCE_DIR}/ffmpeg/libavformat ${PROJECT_SOURCE_DIR}/ffmpeg/libavutil ${PROJECT_SOURCE_DIR}/ffmpeg/libswresample ${PROJECT_SOURCE_DIR}/ffmpeg/libswscale ${PROJECT_SOURCE_DIR}/x264)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s")
@@ -64,6 +64,8 @@ set(GAME_SOURCES ${SOURCES}
     src/game/weapsel.cpp
     src/game/controller/commonController.cpp
     src/game/controller/localController.cpp
+    src/game/controller/netController.cpp
+    src/game/net/net.cpp
     src/game/controller/replayController.cpp
     src/game/controller/stats_presenter.cpp
     src/game/menu/booleanSwitchBehavior.cpp
@@ -96,7 +98,7 @@ if(APPLE)
     set_source_files_properties(src/game/SDLmain.m PROPERTIES COMPILE_FLAGS "-std=c99")
 
     # Populate RESOURCE_FILES with files to copy into the .app Resources/ directory.
-    file(GLOB_RECURSE RESOURCE_FILES pkg/*.cfg pkg/TC/* pkg/*.icns)
+    file(GLOB_RECURSE RESOURCE_FILES pkg/*.cfg pkg/icon.png pkg/spectator_icon.png pkg/LieroNet.icns TC/*)
 else(APPLE)
     set(GAME_SOURCES ${GAME_SOURCES} src/game/sdlmain.cpp)
 endif(APPLE)
@@ -113,11 +115,17 @@ if(APPLE)
     target_link_libraries(openliero "-framework Cocoa" "-framework CoreFoundation")
     set_target_properties(openliero PROPERTIES MACOSX_BUNDLE TRUE)
     set_target_properties(openliero PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in")
-    set(MACOSX_BUNDLE_ICON_FILE liero)
+    set(MACOSX_BUNDLE_ICON_FILE LieroNet)
+    set(MACOSX_BUNDLE_BUNDLE_NAME "Liero")
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.huwrowlands.liero")
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "1")
+    set(MACOSX_BUNDLE_INFO_STRING "OpenLiero with network play")
 
     # Preserve directory structure when copying contents of pkg/ to the .app Resources/ directory.
     foreach(absolute_path ${RESOURCE_FILES})
-        file(RELATIVE_PATH relative_path "${CMAKE_CURRENT_SOURCE_DIR}/pkg" ${absolute_path})
+        file(RELATIVE_PATH relative_path "${CMAKE_CURRENT_SOURCE_DIR}" ${absolute_path})
+        string(REGEX REPLACE "^pkg/" "" relative_path "${relative_path}")
         get_filename_component(relative_path ${relative_path} DIRECTORY)
         set_source_files_properties(${absolute_path}
             PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/${relative_path}")

@@ -32,7 +32,7 @@ Extensions::Extensions()
 , allowViewingSpawnPoint(false)
 , singleScreenReplay(false)
 , spectatorWindow(false)
-, tc(std::string("openliero"))
+, tc(std::string("Liero v1.33"))
 {
 }
 

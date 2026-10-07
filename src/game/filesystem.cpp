@@ -703,7 +703,7 @@ FsNode::FsNode(std::string const& path)
 				}
 #else
 				if (part.empty())
-					imp.reset(new FsNodeFilesystem(part));
+					imp.reset(new FsNodeFilesystem("/")); // Absolute path
 				else
 				{
 					imp.reset(new FsNodeFilesystem("."));

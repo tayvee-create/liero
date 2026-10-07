@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <cstring>
+#include <cstdlib>
 #include <cassert>
 #include <cstdlib>
 #include <cctype>
@@ -24,6 +25,7 @@
 
 #include "controller/replayController.hpp"
 #include "controller/localController.hpp"
+#include "controller/netController.hpp"
 #include "controller/controller.hpp"
 
 #include "gfx/macros.hpp"
@@ -543,6 +545,8 @@ void Gfx::loadMenus()
 
 	mainMenu.addItem(MenuItem(10, 10, "", MainMenu::MaResumeGame)); // string set in menuLoop
 	mainMenu.addItem(MenuItem(10, 10, "", MainMenu::MaNewGame)); // string set in menuLoop
+	mainMenu.addItem(MenuItem(10, 10, "HOST NETWORK GAME", MainMenu::MaNetHost));
+	mainMenu.addItem(MenuItem(10, 10, "JOIN NETWORK GAME", MainMenu::MaNetJoin));
 	mainMenu.addItem(MenuItem(48, 48, "OPTIONS (F2)", MainMenu::MaAdvanced));
 	mainMenu.addItem(MenuItem(48, 48, "REPLAYS (F3)", MainMenu::MaReplays));
 	mainMenu.addItem(MenuItem(48, 48, "TC", MainMenu::MaTc));
@@ -690,7 +694,13 @@ void Gfx::processEvent(SDL_Event& ev, Controller* controller)
 
 		case SDL_QUIT:
 		{
+			// Cmd+Q / closing the window. Nothing polls `running`, so quit here:
+			// tell a network opponent, keep the settings, and exit.
 			running = false;
+			netShutdown();
+			settings->save(getConfigNode() / "liero.cfg", rand);
+			SDL_Quit();
+			std::exit(0);
 		}
 		break;
 
@@ -1858,7 +1868,14 @@ restart:
 		controller->draw(this->singleScreenRenderer, true);
 
 
-		int selection = menuLoop();
+		int selection;
+		if (netAutoStart.mode)
+		{
+			selection = netAutoStart.mode == 1 ? MainMenu::MaNetHost : MainMenu::MaNetJoin;
+			netAutoStart.mode = 0;
+		}
+		else
+			selection = menuLoop();
 
 		if(selection == MainMenu::MaNewGame)
 		{
@@ -1882,6 +1899,13 @@ restart:
 			}
 
 			controller = std::move(newController);
+		}
+		else if(selection == MainMenu::MaNetHost || selection == MainMenu::MaNetJoin)
+		{
+			std::unique_ptr<Controller> netController = runNetworkSetup(selection == MainMenu::MaNetHost);
+			if (!netController)
+				continue;
+			controller = std::move(netController);
 		}
 		else if(selection == MainMenu::MaResumeGame)
 		{
