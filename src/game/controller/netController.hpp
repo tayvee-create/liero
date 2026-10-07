@@ -20,7 +20,8 @@ struct ReplayWriter;
 // is simulated once both players' events for frame N have arrived; local events
 // are scheduled `inputDelay` frames ahead to hide network latency.
 //
-// The host always controls worm 0 (left), the joining player worm 1 (right).
+// The joining player controls worm 0 (left), the host worm 1 (right). Both
+// play with the arrow-key scheme (onePlayerControls), as each has their own Mac.
 struct NetController : CommonController
 {
 	NetController(std::unique_ptr<Game> game, std::unique_ptr<net::Connection> conn,

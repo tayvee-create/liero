@@ -98,16 +98,17 @@ WeaponSelection::WeaponSelection(Game& game)
 
 	if (gfx.onePlayerActive)
 	{
+		// Only a genuine one-human game gets the single screen; network games
+		// have two humans even if one player mode was used earlier
 		int humans = 0;
 		for (std::size_t i = 0; i < menus.size(); ++i)
+			humans += isReady[i] ? 0 : 1;
+		onePlayer = (humans == 1);
+		for (std::size_t i = 0; onePlayer && i < menus.size(); ++i)
 		{
 			if (!isReady[i])
-			{
-				++humans;
 				menus[i].place(36, 40);
-			}
 		}
-		onePlayer = (humans == 1);
 	}
 }
 
@@ -149,17 +150,16 @@ void WeaponSelection::drawControls(Renderer& renderer, std::size_t menuIdx, int 
 	Worm& worm = *game.wormByIdx(vp.wormIdx);
 
 	uint32_t const* keys;
-	if (onePlayer)
+	if (onePlayer || netLocalWorm >= 0)
 		keys = onePlayerControls;
 	else
 	{
-		// In a network game the synchronized settings belong to the host; show this Mac's own keys
-		WormSettings& ws = (netLocalWorm >= 0) ? *gfx.settings->wormSettings[0] : *worm.settings;
+		WormSettings& ws = *worm.settings;
 		keys = gfx.settings->extensions ? ws.controlsEx : ws.controls;
 	}
 
 	auto k = [&](int c) { return displayKeyName(keys[c]); };
-	bool hasDig = (onePlayer || gfx.settings->extensions) && keys[WormSettings::Dig] != 0;
+	bool hasDig = (keys == onePlayerControls || gfx.settings->extensions) && keys[WormSettings::Dig] != 0;
 
 	std::vector<std::string> lines;
 	if (full)
@@ -272,7 +272,7 @@ void WeaponSelection::drawNormalViewports(Renderer& renderer, GameState state)
 				Viewport& vp = *game.viewports[i];
 				if (netLocalWorm >= 0 && int(vp.wormIdx) != netLocalWorm)
 					continue;
-				drawControls(renderer, i, vp.rect.x1 + 8, 104, false);
+				drawControls(renderer, i, vp.rect.x1 + 8, 100, false);
 			}
 		}
 

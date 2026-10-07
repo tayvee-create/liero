@@ -1925,6 +1925,7 @@ restart:
 		}
 		else if(selection == MainMenu::MaNetHost || selection == MainMenu::MaNetJoin)
 		{
+			restorePlayerControllers(); // Leave one player mode: both network players are human
 			std::unique_ptr<Controller> netController = runNetworkSetup(selection == MainMenu::MaNetHost);
 			if (!netController)
 				continue;

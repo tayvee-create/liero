@@ -60,8 +60,8 @@ NetController::NetController(std::unique_ptr<Game> gameInit, std::unique_ptr<net
 , state(StateInitial)
 , fadeValue(0)
 , goingToMenu(false)
-, localIdx(isHost ? 0 : 1)
-, remoteIdx(isHost ? 1 : 0)
+, localIdx(isHost ? 1 : 0)
+, remoteIdx(isHost ? 0 : 1)
 , inputDelay(inputDelayInit)
 , simFrame(0)
 , nextLocalFrame(inputDelayInit)
@@ -81,7 +81,7 @@ NetController::NetController(std::unique_ptr<Game> gameInit, std::unique_ptr<net
 		inputs[1][f];
 	}
 
-	// Same layout as a local game: host on the left, joiner on the right
+	// Same layout as a local game: joiner on the left, host on the right
 	game->clearViewports();
 	game->worms[0]->statsX = 0;
 	game->worms[1]->statsX = 218;
@@ -131,7 +131,18 @@ void NetController::onKey(int key, bool keyState)
 	if (state != StateWeaponSelection && state != StateGame)
 		return;
 
-	// Either player's keys on this keyboard control the local worm
+	// Each player has their own Mac, so everyone gets the full-keyboard scheme:
+	// arrows + X fire, C change, Z jump, V dig
+	for (int c = 0; c < WormSettings::MaxControlEx; ++c)
+	{
+		if (onePlayerControls[c] == uint32_t(key))
+		{
+			pendingEvents.push_back(uint8_t(c | (keyState ? 0x80 : 0)));
+			return;
+		}
+	}
+
+	// Either player's configured keys on this keyboard also work
 	bool ext = gfx.settings->extensions;
 	std::size_t maxControl = ext ? WormSettings::MaxControlEx : WormSettings::MaxControl;
 	for (int p = 0; p < 2; ++p)
@@ -686,7 +697,7 @@ std::unique_ptr<Controller> hostGame()
 			"WAITING FOR YOUR OPPONENT TO JOIN...",
 			"(THEY CHOOSE JOIN NETWORK GAME)",
 			"",
-			"YOU ARE THE LEFT WORM",
+			"YOU ARE THE RIGHT WORM",
 			"MATCH SETUP (F7) IS USED FOR THIS GAME",
 			"",
 			"ESC: CANCEL"});
@@ -727,24 +738,51 @@ std::unique_ptr<Controller> hostGame()
 		return nullptr;
 	}
 
-	// Build the initial game from our settings with the opponent as the right worm.
-	// Our own settings are changed only while serializing, then restored.
+	// Build the initial game from our settings: the joiner is the left worm (0) and
+	// we, the host, are the right worm (1) using our own left player profile.
+	// Our settings are changed only while serializing, then restored.
+	struct SavedWorm
+	{
+		uint32_t controller;
+		std::string name;
+		bool randomName;
+		int rgb[3];
+		uint32_t weapons[5];
+	};
+	auto save = [](WormSettings& ws) {
+		SavedWorm sw;
+		sw.controller = ws.controller;
+		sw.name = ws.name;
+		sw.randomName = ws.randomName;
+		std::copy(ws.rgb, ws.rgb + 3, sw.rgb);
+		std::copy(ws.weapons, ws.weapons + 5, sw.weapons);
+		return sw;
+	};
+	auto apply = [](WormSettings& ws, SavedWorm const& sw) {
+		ws.controller = sw.controller;
+		ws.name = sw.name;
+		ws.randomName = sw.randomName;
+		std::copy(sw.rgb, sw.rgb + 3, ws.rgb);
+		std::copy(sw.weapons, sw.weapons + 5, ws.weapons);
+	};
+
 	WormSettings& ws0 = *settings.wormSettings[0];
 	WormSettings& ws1 = *settings.wormSettings[1];
-	uint32_t savedController[2] = {ws0.controller, ws1.controller};
-	std::string savedName = ws1.name;
-	bool savedRandomName = ws1.randomName;
-	int savedRgb[3] = {ws1.rgb[0], ws1.rgb[1], ws1.rgb[2]};
-	uint32_t savedWeapons[5];
-	std::copy(ws1.weapons, ws1.weapons + 5, savedWeapons);
+	SavedWorm saved[2] = {save(ws0), save(ws1)};
 
-	ws0.controller = 0;
-	ws1.controller = 0;
-	ws1.name = name;
-	ws1.randomName = false;
-	std::copy(rgb, rgb + 3, ws1.rgb);
+	SavedWorm me = saved[0];
+	me.controller = 0;
+	me.randomName = false;
+	SavedWorm opponent;
+	opponent.controller = 0;
+	opponent.name = name;
+	opponent.randomName = false;
+	std::copy(rgb, rgb + 3, opponent.rgb);
 	for (int i = 0; i < 5; ++i)
-		ws1.weapons[i] = weapons[i] <= 40 ? weapons[i] : 0;
+		opponent.weapons[i] = weapons[i] <= 40 ? weapons[i] : 0;
+
+	apply(ws0, opponent);
+	apply(ws1, me);
 
 	std::string path = tempGamePath();
 	std::string buildError;
@@ -763,12 +801,8 @@ std::unique_ptr<Controller> hostGame()
 		buildError = e.what();
 	}
 
-	ws0.controller = savedController[0];
-	ws1.controller = savedController[1];
-	ws1.name = savedName;
-	ws1.randomName = savedRandomName;
-	std::copy(savedRgb, savedRgb + 3, ws1.rgb);
-	std::copy(savedWeapons, savedWeapons + 5, ws1.weapons);
+	apply(ws0, saved[0]);
+	apply(ws1, saved[1]);
 
 	if (!buildError.empty())
 	{
@@ -931,7 +965,7 @@ std::unique_ptr<Controller> joinGame()
 			lines.push_back("SEARCHING YOUR NETWORK FOR A HOST...");
 		lines.push_back(status);
 		lines.push_back("");
-		lines.push_back("YOU ARE THE RIGHT WORM");
+		lines.push_back("YOU ARE THE LEFT WORM");
 		lines.push_back("");
 		if (phase == Searching)
 			lines.push_back("I: TYPE THE HOST'S IP ADDRESS");
